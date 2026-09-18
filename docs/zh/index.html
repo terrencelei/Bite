@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>对味 Palate — 找到真正对味的餐厅</title>
+<meta name="description" content="对味是一款会学习你口味的美食社交发现应用：可解释的「对味度」匹配、两两对比排名、口味相似度、拼饭推荐、成就与美食护照。概念版展示与微信、支付宝、大众点评、小红书的打通设想。">
+<meta property="og:title" content="对味 Palate — 找到真正对味的餐厅">
+<meta property="og:description" content="会学习你口味的美食社交发现应用。可解释的对味度、两两排名、口味相似度、美食护照，并打通微信 / 支付宝 / 点评 / 小红书。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://terrencelei.github.io/Palate/assets/screens/discover.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍜</text></svg>">
+<style>
+  :root{
+    --bg:#100b0e;--bg2:#181017;
+    --panel:rgba(255,255,255,.045);--panel-edge:rgba(255,255,255,.10);
+    --ink:#fbeef0;--muted:#bda9b1;
+    --coral:#f24c5c;--coral-soft:rgba(242,76,92,.14);
+    --saffron:#fa9447;--indigo:#8b88f2;--green:#3ac57a;
+    --wechat:#07c160;--alipay:#1677ff;--dianping:#ff6a2c;--red:#ff2442;
+    --radius:18px;--maxw:1120px;--nav-clearance:92px;--hero-top-gap:150px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1100px 520px at 78% -12%, rgba(242,76,92,.14), transparent 60%),
+      radial-gradient(900px 520px at -12% 22%, rgba(139,136,242,.12), transparent 60%),
+      var(--bg);
+    color:var(--ink);line-height:1.75;padding-top:var(--nav-clearance);-webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(16,11,14,.66);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07)}
+  .nav-inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:22px}
+  .logo{font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:10px;font-size:1.08rem}
+  .logo .mark{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--coral),var(--saffron));box-shadow:0 6px 18px rgba(242,76,92,.4);font-size:.95rem}
+  .logo small{color:var(--muted);font-weight:600;font-size:.8rem;letter-spacing:1px}
+  .nav-links{display:flex;gap:20px;margin-left:auto;align-items:center}
+  .nav-links a{color:var(--muted);font-size:.94rem;font-weight:500;transition:color .2s}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.95rem;
+    border:1px solid var(--panel-edge);transition:transform .15s ease,background .2s,border-color .2s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--coral),var(--saffron));color:#2a0d10;border-color:transparent;box-shadow:0 8px 30px rgba(242,76,92,.35)}
+  .btn.ghost{background:var(--panel)}
+  .nav-links .btn{padding:8px 16px;font-size:.9rem}
+  @media(max-width:760px){.nav-links a.hide-sm{display:none}}
+
+  header{padding:var(--hero-top-gap) 0 30px}
+  .hero{display:grid;grid-template-columns:1.05fr .82fr;gap:52px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--coral);font-weight:700;font-size:.82rem;
+    letter-spacing:.06em;background:var(--coral-soft);padding:6px 13px;border-radius:999px}
+  h1{font-size:clamp(2.3rem,5.4vw,3.7rem);line-height:1.14;letter-spacing:.5px;margin:20px 0 18px;font-weight:800}
+  h1 .grad{background:linear-gradient(90deg,var(--coral),var(--saffron));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{color:var(--muted);font-size:1.14rem;max-width:32em}
+  .lede b{color:var(--ink);font-weight:600}
+  .hero-cta{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .hero-note{margin-top:18px;color:var(--muted);font-size:.88rem;display:flex;gap:16px;flex-wrap:wrap}
+  .hero-note span{display:inline-flex;align-items:center;gap:7px}
+  .hero-note i{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+
+  /* device */
+  .device{position:relative;width:100%;max-width:300px;margin:0 auto;border-radius:44px;padding:12px;
+    background:linear-gradient(160deg,#26191d,#140d10);border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 40px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+  .device::before{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    width:96px;height:26px;background:#0a0608;border-radius:999px;z-index:5}
+  .device img{display:block;width:100%;border-radius:33px}
+  .device.tilt{transform:rotate(2.2deg)}
+  .hero-device{filter:drop-shadow(0 30px 60px rgba(242,76,92,.18))}
+
+  /* ── in-HTML localized screen mockup ─────────────── */
+  .screen{border-radius:33px;overflow:hidden;background:#0e0a0c;aspect-ratio:9/19.3;position:relative;
+    color:#fbeef0;font-size:12px}
+  .screen .sb{display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0;font-size:11px;color:#cdbcc2;font-weight:600}
+  .screen .body{padding:6px 14px 14px}
+  .screen h4{font-size:22px;font-weight:800;letter-spacing:.5px;margin:6px 0 2px}
+  .screen .q{font-weight:700;font-size:13px;margin-bottom:8px}
+  .screen .search{background:#1c1418;border:1px solid rgba(255,255,255,.08);border-radius:12px;
+    padding:8px 10px;color:#8f7d84;display:flex;align-items:center;gap:7px;font-size:11px}
+  .screen .chips{display:flex;gap:6px;margin:9px 0 4px;overflow:hidden}
+  .screen .chip2{background:#1c1418;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:5px 10px;
+    font-size:11px;white-space:nowrap;color:#e7d7dc}
+  .screen .chip2.on{background:linear-gradient(135deg,var(--coral),var(--saffron));color:#2a0d10;border-color:transparent;font-weight:700}
+  .screen .mini2{background:#171015;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 11px;
+    display:flex;align-items:center;gap:9px;margin:8px 0}
+  .screen .lock{width:26px;height:26px;border-radius:8px;background:#241a1f;display:grid;place-items:center;font-size:12px}
+  .screen .bar{height:5px;border-radius:99px;background:#2a1f24;overflow:hidden;margin-top:5px}
+  .screen .bar>i{display:block;height:100%;width:90%;background:linear-gradient(90deg,var(--indigo),var(--coral))}
+  .screen .lbl{font-weight:800;font-size:14px;margin:10px 0 7px}
+  .screen .rc{border-radius:14px;overflow:hidden;background:#171015;border:1px solid rgba(255,255,255,.07)}
+  .screen .rc .img{height:96px;position:relative;display:grid;place-items:center;
+    background:linear-gradient(135deg,#7a5cc4,#3a2a5a)}
+  .screen .rc .img::after{content:"🍜";font-size:40px;opacity:.55}
+  .screen .match{position:absolute;top:8px;left:8px;background:var(--green);color:#04240f;font-weight:800;
+    font-size:11px;padding:4px 8px;border-radius:999px;display:flex;gap:4px;align-items:center}
+  .screen .rc .info{padding:9px 11px}
+  .screen .rc .row1{display:flex;justify-content:space-between;align-items:center}
+  .screen .rc .nm{font-weight:800;font-size:14px}
+  .screen .rc .sub{color:#a08c93;font-size:11px;margin-top:1px}
+  .screen .rc .why{color:#b7a6ad;font-size:11px;margin-top:6px;line-height:1.5}
+  .screen .rc .fr{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:#a08c93}
+  .screen .av{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#5b6cff,#8b3d8f);display:grid;place-items:center;font-size:10px}
+  .screen .tabbar{position:absolute;bottom:0;left:0;right:0;height:52px;background:rgba(14,10,12,.92);
+    border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-around;align-items:center;font-size:9px;color:#7c6c72}
+  .screen .tabbar .t{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .screen .tabbar .t.on{color:var(--coral)}
+  .screen .tabbar .t b{font-size:14px;font-weight:400}
+
+  .stats{margin:60px 0 0}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .stat{background:var(--panel);border:1px solid var(--panel-edge);border-radius:var(--radius);padding:20px 22px}
+  .stat b{display:block;font-size:1.7rem;letter-spacing:.5px;background:linear-gradient(90deg,var(--coral),var(--saffron));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat span{color:var(--muted);font-size:.9rem}
+
+  section{padding:96px 0 0;scroll-margin-top:calc(var(--nav-clearance) + 16px)}
+  .sec-head{max-width:52em;margin-bottom:40px}
+  .sec-head .tag{color:var(--coral);font-weight:700;font-size:.82rem;letter-spacing:.14em}
+  .sec-head h2{font-size:clamp(1.7rem,3.4vw,2.5rem);letter-spacing:.5px;margin:10px 0 12px;font-weight:800}
+  .sec-head p{color:var(--muted);font-size:1.08rem}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--panel-edge);border-radius:var(--radius);padding:26px;transition:transform .2s ease,border-color .2s}
+  .card:hover{transform:translateY(-3px);border-color:rgba(242,76,92,.38)}
+  .card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;background:var(--coral-soft);margin-bottom:16px}
+  .card h3{font-size:1.16rem;margin-bottom:8px;letter-spacing:.3px}
+  .card p{color:var(--muted);font-size:.98rem}
+  @media(max-width:860px){.cards{grid-template-columns:1fr}}
+
+  .loop{display:flex;flex-wrap:wrap;gap:10px}
+  .loop-step{flex:1 1 140px;background:var(--panel);border:1px solid var(--panel-edge);border-radius:14px;padding:18px 16px}
+  .loop-step .n{font-size:.72rem;color:var(--coral);font-weight:800;letter-spacing:.1em}
+  .loop-step b{display:block;margin:6px 0 4px;font-size:1.05rem}
+  .loop-step span{color:var(--muted);font-size:.9rem}
+
+  /* super-app section */
+  .superapps{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  @media(max-width:860px){.superapps{grid-template-columns:1fr}}
+  .sa{background:var(--panel);border:1px solid var(--panel-edge);border-radius:var(--radius);padding:26px;position:relative;overflow:hidden}
+  .sa .glow{position:absolute;inset:auto -40px -60px auto;width:180px;height:180px;border-radius:50%;filter:blur(50px);opacity:.35}
+  .sa-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .sa-ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:1.4rem;color:#fff;font-weight:800}
+  .sa-head b{font-size:1.18rem;letter-spacing:.5px}
+  .sa-head span{display:block;color:var(--muted);font-size:.82rem;margin-top:1px}
+  .sa ul{list-style:none;display:grid;gap:9px}
+  .sa li{color:#d9c8ce;font-size:.96rem;padding-left:22px;position:relative}
+  .sa li::before{content:"→";position:absolute;left:2px;color:var(--coral);font-weight:800}
+  .sa .concept{position:absolute;top:16px;right:16px;font-size:.68rem;letter-spacing:.1em;color:#9a8890;
+    border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 9px}
+  .wechat .glow{background:var(--wechat)} .wechat .sa-ic{background:var(--wechat)}
+  .alipay .glow{background:var(--alipay)} .alipay .sa-ic{background:var(--alipay)}
+  .dianping .glow{background:var(--dianping)} .dianping .sa-ic{background:var(--dianping)}
+  .red .glow{background:var(--red)} .red .sa-ic{background:var(--red)}
+
+  .mp-callout{margin-top:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;
+    background:linear-gradient(135deg,rgba(7,193,96,.12),rgba(22,119,255,.10));
+    border:1px solid var(--panel-edge);border-radius:var(--radius);padding:24px 26px}
+  .mp-callout .big{font-size:1.15rem;font-weight:800;letter-spacing:.5px}
+  .mp-callout p{color:var(--muted);font-size:.98rem;flex:1 1 320px}
+
+  /* share-card concept (RED style) */
+  .redcard{width:220px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);margin:0 auto}
+  .redcard .top{background:linear-gradient(135deg,var(--coral),var(--saffron));padding:20px 18px;color:#fff}
+  .redcard .top .k{font-size:.7rem;font-weight:800;letter-spacing:.1em;opacity:.9}
+  .redcard .top .ti{font-size:1.5rem;font-weight:800;margin:2px 0 12px}
+  .redcard .rk{display:flex;gap:8px;align-items:center;font-size:.82rem;margin:6px 0;color:#fff}
+  .redcard .rk b{width:16px;font-weight:800}
+  .redcard .rk .c{margin-left:auto;opacity:.85;font-size:.72rem}
+  .redcard .cap{background:#171015;padding:12px 14px;color:#cdbcc2;font-size:.78rem}
+  .redcard .cap .tags{color:var(--red);margin-top:4px}
+
+  .engine{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:start}
+  @media(max-width:860px){.engine{grid-template-columns:1fr}}
+  .formula{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--panel-edge);border-radius:var(--radius);padding:26px}
+  .formula code{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);
+    background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;line-height:1.7;font-size:.88rem;overflow-x:auto}
+  .formula code .w{color:var(--coral);font-weight:700}
+  .formula ul{list-style:none;margin-top:18px;display:grid;gap:10px}
+  .formula li{color:var(--muted);font-size:.96rem;padding-left:22px;position:relative}
+  .formula li::before{content:"›";position:absolute;left:4px;color:var(--coral);font-weight:800}
+  .engine-side{display:grid;gap:14px}
+  .mini{background:var(--panel);border:1px solid var(--panel-edge);border-radius:14px;padding:18px 20px}
+  .mini b{display:block;margin-bottom:4px} .mini span{color:var(--muted);font-size:.94rem}
+
+  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  @media(max-width:980px){.gallery{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.gallery{grid-template-columns:1fr}}
+  .shot{text-align:center}
+  .shot .device{max-width:220px}
+  .shot p{margin-top:14px;color:var(--muted);font-size:.9rem}
+  .shot p b{color:var(--ink);display:block;font-size:.98rem;margin-bottom:2px}
+  .note{margin-top:20px;color:#9a8890;font-size:.86rem}
+
+  .tech{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .chip{background:var(--panel);border:1px solid var(--panel-edge);border-radius:999px;padding:9px 16px;font-size:.92rem;color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+
+  .band{margin:96px 0 0;background:linear-gradient(135deg,rgba(242,76,92,.16),rgba(139,136,242,.14));
+    border:1px solid var(--panel-edge);border-radius:24px;padding:48px 40px;text-align:center}
+  .band h2{font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:.5px;margin-bottom:12px}
+  .band p{color:var(--muted);max-width:42em;margin:0 auto 26px}
+
+  footer{margin-top:80px;padding:40px 0 60px;border-top:1px solid rgba(255,255,255,.07);color:var(--muted);font-size:.92rem}
+  .foot-inner{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+  .disclaimer{margin-top:14px;font-size:.82rem;color:#8a7a81;max-width:64em;line-height:1.7}
+
+  @media(max-width:860px){.hero{grid-template-columns:1fr;gap:36px}.hero-device{order:-1}:root{--hero-top-gap:120px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo"><span class="mark">🍜</span> 对味 <small>Palate</small></div>
+    <div class="nav-links">
+      <a href="#idea" class="hide-sm">产品理念</a>
+      <a href="#superapps" class="hide-sm">生态打通</a>
+      <a href="#engine" class="hide-sm">技术内核</a>
+      <a href="#screens" class="hide-sm">界面</a>
+      <a href="../">EN</a>
+      <a class="btn primary" href="https://github.com/terrencelei/Palate">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="wrap">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">🍽 美食社交发现 · 中国市场概念版</span>
+      <h1>找到真正 <span class="grad">对味</span> 的那一家。</h1>
+      <p class="lede">对味会学习你的口味，也学习你信得过的人的口味，只回答一个问题：<b>今晚吃什么？</b>——像是「网易云的推荐 + 一个社交网络 + 一本美食护照」。</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#superapps">看生态打通设想</a>
+        <a class="btn ghost" href="#screens">看界面</a>
+      </div>
+      <div class="hero-note">
+        <span><i></i> SwiftUI · iOS 18</span>
+        <span><i></i> 微信小程序版设想</span>
+        <span><i></i> 立足上海 · 通达亚洲</span>
+      </div>
+    </div>
+    <div class="hero-device">
+      <div class="device tilt">
+        <div class="screen">
+          <div class="sb"><span>20:14</span><span>5G &nbsp; 100%</span></div>
+          <div class="body">
+            <h4>发现</h4>
+            <div class="q">今晚想吃点什么？</div>
+            <div class="search">🔍 找到今晚对味的那一家…</div>
+            <div class="chips">
+              <span class="chip2 on">❤️ 约会</span><span class="chip2">👥 好友小聚</span><span class="chip2">⚡ 快手解决</span>
+            </div>
+            <div class="mini2">
+              <div class="lock">🔒</div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:12px">即将解锁 · 川菜专家 <span style="float:right;color:#a08c93">9/10</span></div>
+                <div class="bar"><i></i></div>
+              </div>
+            </div>
+            <div class="lbl">为你精选</div>
+            <div class="rc">
+              <div class="img"><div class="match">92% 对味</div></div>
+              <div class="info">
+                <div class="row1"><div class="nm">福和慧</div><div style="color:#a08c93;font-size:12px">¥¥¥</div></div>
+                <div class="sub">现代中餐 · 静安</div>
+                <div class="why">契合你对创意中餐的偏好；好友 Jason（与你对味 96%）将它列入上海 Top 3。</div>
+                <div class="fr"><span class="av">J</span> Jason · 对味 96%</div>
+              </div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="t on"><b>✦</b>发现</div><div class="t"><b>👥</b>社区</div><div class="t"><b>🗺</b>地图</div><div class="t"><b>🏆</b>榜单</div><div class="t"><b>👤</b>我的</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stats-grid">
+      <div class="stat"><b>92% 对味</b><span>可解释的匹配度，而非陌生人星级</span></div>
+      <div class="stat"><b>19 维</b><span>人和餐厅共用的口味模型</span></div>
+      <div class="stat"><b>40+ 成就</b><span>徽章 · 印章 · 奖章</span></div>
+      <div class="stat"><b>4 大生态</b><span>微信 · 支付宝 · 点评 · 小红书（打通设想）</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 理念 -->
+  <section id="idea">
+    <div class="sec-head">
+      <div class="tag">产品理念</div>
+      <h2>不是又一个「打分 + 写点评」。</h2>
+      <p>星级和海量点评告诉你陌生人怎么想。对味告诉你——<em>你自己</em>会怎么想。每一次排名都在打磨你的口味模型；关注好友后，和你越对味的人，话语权越大；不断探索，你的美食足迹就沉淀成一种身份。</p>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="ic">🎯</div><h3>个人口味</h3><p>一枚学习得到的口味向量，把你和每一家餐厅放进同一个空间，推荐真正属于你——而且每个匹配都有理由。</p></div>
+      <div class="card"><div class="ic">🤝</div><h3>社交发现</h3><p>「对味度」决定谁的意见更重要。96% 的口味搭子能左右推荐，口味相去甚远的人则不会。</p></div>
+      <div class="card"><div class="ic">🌏</div><h3>探索收集</h3><p>排行榜、成就和美食护照，把你吃过的地方变成值得晒的进度。</p></div>
+    </div>
+  </section>
+
+  <!-- 生态打通（差异化重点） -->
+  <section id="superapps">
+    <div class="sec-head">
+      <div class="tag">为中国的生活方式而生</div>
+      <h2>打通你已经在用的超级 App。</h2>
+      <p>对味不做又一个孤岛。它接进你日常已经在用的生态——一处口味模型，处处可用。以下为面向中国市场的<strong>产品打通设想</strong>，尚未接入真实接口。</p>
+    </div>
+    <div class="superapps">
+      <div class="sa wechat"><div class="glow"></div><span class="concept">概念设想</span>
+        <div class="sa-head"><div class="sa-ic">💬</div><div><b>微信</b><span>登录 · 社交关系 · 分享 · 小程序</span></div></div>
+        <ul>
+          <li>一键微信登录，导入通讯录好友，直接找到你的「对味搭子」。</li>
+          <li>把「我的上海 Top 10」分享到朋友圈或好友群，附带精美榜单卡片。</li>
+          <li>「对味小程序」即点即用，无需下载，用完即走。</li>
+          <li>拼饭结果一键发到群里，好友投票选定今晚这家。</li>
+        </ul>
+      </div>
+      <div class="sa alipay"><div class="glow"></div><span class="concept">概念设想</span>
+        <div class="sa-head"><div class="sa-ic">💰</div><div><b>支付宝</b><span>预订 · 到店买单 · 信用 · 小程序</span></div></div>
+        <ul>
+          <li>芝麻信用免押预约，到店扫码买单，「发现—预订—买单」一条龙。</li>
+          <li>支付宝小程序入口，触达不装 App 的用户。</li>
+          <li>消费记录（脱敏授权后）回流，自动补全你的口味模型与美食护照。</li>
+          <li>结合口碑/饿了么优惠，在对味的推荐里透明呈现。</li>
+        </ul>
+      </div>
+      <div class="sa dianping"><div class="glow"></div><span class="concept">概念设想</span>
+        <div class="sa-head"><div class="sa-ic">⭐</div><div><b>大众点评</b><span>历史导入 · 差异化定位</span></div></div>
+        <ul>
+          <li>导入你在点评的到店记录与收藏，一键转化为你的口味模型。</li>
+          <li>核心差异：点评看陌生人的<em>平均分</em>，对味只看你、以及和你对味的人。</li>
+          <li>把点评的「必吃榜」当作探索线索，用「对味度」重新为你排序。</li>
+        </ul>
+      </div>
+      <div class="sa red"><div class="glow"></div><span class="concept">概念设想</span>
+        <div class="sa-head"><div class="sa-ic">📕</div><div><b>小红书</b><span>一键成图 · 种草 · 内容分发</span></div></div>
+        <ul>
+          <li>把你的排行榜、口味档案、美食护照，一键生成精美笔记图。</li>
+          <li>自动带话题：#上海美食 #探店 #对味，种草不费力。</li>
+          <li>「对味卡片」自带你与好友的口味相似度，天然适合社交传播。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mp-callout">
+      <div>
+        <div class="big">💬 微信小程序优先</div>
+      </div>
+      <p>面向中国市场，除原生 iOS App 外，规划一个<strong>微信小程序</strong>版本作为增长入口：零下载门槛、借助社交裂变分享榜单与拼饭邀请，把口味模型和成就体系无缝带进微信生态。</p>
+    </div>
+
+    <div style="margin-top:34px;display:grid;grid-template-columns:1fr auto;gap:34px;align-items:center">
+      <div>
+        <h3 style="font-size:1.3rem;letter-spacing:.5px;margin-bottom:10px">为社交传播而生的「对味卡片」</h3>
+        <p style="color:var(--muted);max-width:34em">每一张榜单、每一次口味匹配，都能一键导出成适合小红书 / 朋友圈 / 微信群的竖版卡片。分享内容自带你的品味与身份，天然带来拉新——这正是把发现变成增长的关键。</p>
+      </div>
+      <div class="redcard">
+        <div class="top">
+          <div class="k">子墨的</div>
+          <div class="ti">上海 Top 10</div>
+          <div class="rk"><b>1</b> 福和慧 <span class="c">现代中餐</span></div>
+          <div class="rk"><b>2</b> 蜀味川菜馆 <span class="c">川菜</span></div>
+          <div class="rk"><b>3</b> 鼎泰丰 <span class="c">本帮/点心</span></div>
+          <div class="rk"><b>4</b> 海底捞 <span class="c">火锅</span></div>
+          <div class="rk"><b>5</b> 玲珑 <span class="c">创意中餐</span></div>
+        </div>
+        <div class="cap">在「对味」查看完整榜单 →<div class="tags">#上海美食 #探店 #对味</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 闭环 -->
+  <section id="how">
+    <div class="sec-head">
+      <div class="tag">产品闭环</div>
+      <h2>每一顿饭，都让下一次推荐更懂你。</h2>
+      <p>排名产生偏好数据 → 推荐更准 → 使用更多 → 数据更丰富。好友提供可信信号，成就带你走向没去过的地方。</p>
+    </div>
+    <div class="loop">
+      <div class="loop-step"><div class="n">01</div><b>发现</b><span>个性化专区 + 看得懂的对味度。</span></div>
+      <div class="loop-step"><div class="n">02</div><b>到店</b><span>在详情页一键标记「去过」。</span></div>
+      <div class="loop-step"><div class="n">03</div><b>排名</b><span>几次两两对比，收入你的榜单。</span></div>
+      <div class="loop-step"><div class="n">04</div><b>学习</b><span>口味向量向你的偏好漂移。</span></div>
+      <div class="loop-step"><div class="n">05</div><b>成就</b><span>探索解锁徽章、印章与奖章。</span></div>
+      <div class="loop-step"><div class="n">06</div><b>分享</b><span>一键生成榜单 / 对味 / 护照卡片。</span></div>
+    </div>
+  </section>
+
+  <!-- 功能 -->
+  <section id="features">
+    <div class="sec-head">
+      <div class="tag">核心功能</div>
+      <h2>是一个完整产品，而不是一屏演示。</h2>
+      <p>五大页面、十余个深度流程——全部可交互，由本地推荐 / 排名 / 成就三大引擎驱动。</p>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="ic">✨</div><h3>个性化对味度</h3><p>醒目、可解释的匹配分——「契合你对川菜的偏好 · Jason（对味 96%）将它列为川菜第一」——比星级更响亮。</p></div>
+      <div class="card"><div class="ic">⚖️</div><h3>两两对比排名</h3><p>标记「去过」后回答几个「更喜欢哪一个？」，看它动画滑入你的城市榜单。</p></div>
+      <div class="card"><div class="ic">👯</div><h3>口味相似度</h3><p>用偏好向量的余弦相似度，找到你的「口味搭子」——也俏皮地告诉你们在哪儿不合。</p></div>
+      <div class="card"><div class="ic">🍽</div><h3>拼饭推荐</h3><p>选好一桌人，给出兼顾满意度、又惩罚分歧的那一家。</p></div>
+      <div class="card"><div class="ic">🛂</div><h3>美食护照</h3><p>把你的排名历史变成按国家分组的城市印章，精确到街区的探索完成度。</p></div>
+      <div class="card"><div class="ic">🏅</div><h3>成就体系</h3><p>徽章（专精）· 印章（地点）· 奖章（成就），五档稀有度——靠探索赢得，而非刷出来。</p></div>
+    </div>
+  </section>
+
+  <!-- 引擎 -->
+  <section id="engine">
+    <div class="sec-head">
+      <div class="tag">技术内核</div>
+      <h2>真引擎，而非写死的页面。</h2>
+      <p>所有业务逻辑都在纯粹、可测试的引擎里——绝不写进视图。把本地 mock 服务换成后端，界面无需改动。</p>
+    </div>
+    <div class="engine">
+      <div class="formula">
+        <strong>推荐引擎 RecommendationEngine</strong>
+        <code>得分 = <span class="w">0.45</span>·口味 + <span class="w">0.25</span>·好友
+     + <span class="w">0.20</span>·场景 + <span class="w">0.05</span>·热度
+     + <span class="w">0.05</span>·新鲜度</code>
+        <ul>
+          <li><b>口味</b> — 你的偏好与餐厅属性的余弦相似度。</li>
+          <li><b>好友</b> — 支持者按<em>他们与你的对味度</em>加权。</li>
+          <li><b>场景</b> — 从一次轻松的提问中读取：场合、预算、距离、氛围。</li>
+          <li><b>新鲜度</b> — 把你推向没探索过的菜系与隐藏小店。</li>
+        </ul>
+      </div>
+      <div class="engine-side">
+        <div class="mini"><b>排名引擎</b><span>二分插入（约 log₂n 次提问）叠加 Bradley-Terry 隐分，榜单平滑可比。</span></div>
+        <div class="mini"><b>成就引擎</b><span>完全数据驱动：40+ 成就均为纯声明，进度对着实时统计快照计算。</span></div>
+        <div class="mini"><b>在线口味学习</b><span>每次排名都让偏好向量漂移——发现页会随使用明显变化。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 界面 -->
+  <section id="screens">
+    <div class="sec-head">
+      <div class="tag">界面</div>
+      <h2>做得像一款已上线的 App。</h2>
+      <p>Apple 原生质感、留白克制、细腻触感，完整深浅色模式；餐厅配图程序化生成，离线也好看。</p>
+    </div>
+    <div class="gallery">
+      <div class="shot"><div class="device"><img src="../assets/screens/detail.png" alt="餐厅详情"></div><p><b>餐厅详情</b>对味环 · 推荐理由 · 招牌菜</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/ranking.png" alt="两两对比排名"></div><p><b>两两对比</b>更喜欢哪一个？</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/social.png" alt="社区与口味搭子"></div><p><b>社区 · 口味搭子</b>谁和你最对味</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/unlock.png" alt="成就解锁"></div><p><b>成就解锁</b>克制，不喧闹</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/passport.png" alt="美食护照"></div><p><b>美食护照</b>足迹化作城市印章</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/map.png" alt="地图"></div><p><b>地图</b>去过 · 想去 · 推荐</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/achievements.png" alt="成就"></div><p><b>成就</b>徽章 · 印章 · 奖章</p></div>
+      <div class="shot"><div class="device"><img src="../assets/screens/friend.png" alt="好友主页"></div><p><b>好友主页</b>口味共鸣</p></div>
+    </div>
+    <p class="note">说明：上方为现有<strong>英文版本</strong>的真实截图；顶部「发现」样机与「对味卡片」展示的是本页的<strong>中文本地化与生态打通概念设想</strong>，尚未合入代码库。</p>
+  </section>
+
+  <div class="band">
+    <h2>先看得见，再动手改。</h2>
+    <p>这一页是面向中国市场的概念可视化：中文本地化、对味卡片、以及微信 / 支付宝 / 点评 / 小红书的打通设想。确认方向后，即可落地到代码库。</p>
+    <a class="btn primary" href="https://github.com/terrencelei/Palate">在 GitHub 查看项目 ↗</a>
+  </div>
+</main>
+
+<footer class="wrap">
+  <div class="foot-inner">
+    <div class="logo"><span class="mark">🍜</span> 对味 <small>Palate</small></div>
+    <div>由 <a href="https://github.com/terrencelei" style="color:var(--coral)">Terrence Lei</a> 打造 · SwiftUI 原型 · <a href="../" style="color:var(--coral)">English</a></div>
+  </div>
+  <p class="disclaimer">概念原型。餐厅数据（含米其林、地标、热度等标记）均为演示用虚构内容，与任何真实门店或指南无关。文中「微信 / 支付宝 / 大众点评 / 小红书 / 芝麻信用 / 口碑 / 饿了么」等仅用于说明产品打通<strong>设想</strong>，本项目与上述各方无任何关联或合作，亦未接入其真实接口。「对味 / Palate」为本原型的项目名称。</p>
+</footer>
+
+</body>
+</html>
