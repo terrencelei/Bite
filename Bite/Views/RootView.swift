@@ -5,9 +5,9 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
 
-    /// Debug-only: `PALATE_SCREEN` env var jumps straight to a screen for screenshotting.
+    /// Debug-only: `BITE_SCREEN` env var jumps straight to a screen for screenshotting.
     private var debugScreen: String? {
-        let v = ProcessInfo.processInfo.environment["PALATE_SCREEN"]
+        let v = ProcessInfo.processInfo.environment["BITE_SCREEN"]
         return (v?.isEmpty ?? true) ? nil : v
     }
 
@@ -65,7 +65,7 @@ private struct DebugScreenHost: View {
 struct MainTabView: View {
     @Environment(AppModel.self) private var model
     @State private var selection: AppTab = {
-        switch ProcessInfo.processInfo.environment["PALATE_TAB"] {
+        switch ProcessInfo.processInfo.environment["BITE_TAB"] {
         case "social": return .social
         case "map": return .map
         case "rankings": return .rankings

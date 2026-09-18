@@ -22,7 +22,7 @@ struct DiscoverView: View {
         }
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.large)
-        .palateDestinations()
+        .biteDestinations()
         .sheet(isPresented: $showContextSheet) {
             ContextualRecommendationView(presetOccasion: presetOccasion)
         }

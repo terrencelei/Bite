@@ -134,7 +134,7 @@ struct ContextualRecommendationView: View {
             }
             .padding()
         }
-        .palateDestinations()
+        .biteDestinations()
     }
 
     private var computedResults: [Recommendation] {

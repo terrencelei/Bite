@@ -30,9 +30,9 @@ protocol PersistenceService {
 /// JSON-file persistence in the app's Documents directory.
 final class FilePersistenceService: PersistenceService {
     private let url: URL
-    private let queue = DispatchQueue(label: "com.palate.persistence")
+    private let queue = DispatchQueue(label: "com.bite.persistence")
 
-    init(filename: String = "palate_state.json") {
+    init(filename: String = "bite_state.json") {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         url = docs.appendingPathComponent(filename)
     }

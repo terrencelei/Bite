@@ -21,7 +21,7 @@ struct ProfileView: View {
             .padding()
         }
         .navigationTitle("Profile")
-        .palateDestinations()
+        .biteDestinations()
         .navigationDestination(for: ProfileRoute.self) { route in
             switch route {
             case .achievements: AchievementsView()

@@ -26,7 +26,7 @@ struct EatTogetherView: View {
         }
         .navigationTitle("Eat Together")
         .navigationBarTitleDisplayMode(.inline)
-        .palateDestinations()
+        .biteDestinations()
     }
 
     private var intro: some View {

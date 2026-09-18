@@ -20,7 +20,7 @@ struct FoodPassportView: View {
         }
         .navigationTitle("Food Passport")
         .navigationBarTitleDisplayMode(.inline)
-        .palateDestinations()
+        .biteDestinations()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showShare = true } label: { Image(systemName: "square.and.arrow.up") }
@@ -91,7 +91,7 @@ struct CityDetailView: View {
         }
         .navigationTitle(city?.name ?? "City")
         .navigationBarTitleDisplayMode(.inline)
-        .palateDestinations()
+        .biteDestinations()
     }
 
     private var completion: some View {
@@ -161,7 +161,7 @@ struct PassportShareCard: View {
                 }
             }
             HStack(spacing: 6) {
-                Image(systemName: "fork.knife.circle.fill"); Text("Palate").font(.caption.weight(.bold))
+                Image(systemName: "fork.knife.circle.fill"); Text("Bite").font(.caption.weight(.bold))
             }.foregroundStyle(.white.opacity(0.9))
         }
         .padding(24)

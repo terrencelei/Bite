@@ -38,7 +38,7 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Spacer()
             Image(systemName: "fork.knife.circle.fill").font(.system(size: 80)).foregroundStyle(Theme.accent)
-            Text("Welcome to Palate").font(.largeTitle.bold())
+            Text("Welcome to Bite").font(.largeTitle.bold())
             Text("Find restaurants you'll actually like — through your own taste and people whose taste you trust.")
                 .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 30)
             Spacer()

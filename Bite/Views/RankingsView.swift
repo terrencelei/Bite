@@ -20,7 +20,7 @@ struct RankingsView: View {
             }
         }
         .navigationTitle("Rankings")
-        .palateDestinations()
+        .biteDestinations()
     }
 
     private var content: some View {

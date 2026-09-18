@@ -15,7 +15,7 @@ struct ShareCardSheet<Card: View>: View {
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
                 Spacer()
-                ShareLink(item: renderedImage, preview: SharePreview("Palate")) {
+                ShareLink(item: renderedImage, preview: SharePreview("Bite")) {
                     Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -62,7 +62,7 @@ struct RankingShareCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(userName.uppercased() + "'S").font(.caption.weight(.heavy)).tracking(1)
                 Text(scope.title).font(.title.bold())
-                Text("Top \(min(entries.count, 10)) · Palate").font(.caption).opacity(0.85)
+                Text("Top \(min(entries.count, 10)) · Bite").font(.caption).opacity(0.85)
             }
             .foregroundStyle(.white)
 
@@ -81,7 +81,7 @@ struct RankingShareCard: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "fork.knife.circle.fill")
-                Text("Palate").font(.caption.weight(.bold))
+                Text("Bite").font(.caption.weight(.bold))
             }
             .foregroundStyle(.white.opacity(0.9))
         }
@@ -111,7 +111,7 @@ struct TasteProfileShareCard: View {
             Text(topCuisines.joined(separator: " · ")).font(.headline).foregroundStyle(.white)
             HStack(spacing: 6) {
                 Image(systemName: "fork.knife.circle.fill")
-                Text("Palate").font(.caption.weight(.bold))
+                Text("Bite").font(.caption.weight(.bold))
             }.foregroundStyle(.white.opacity(0.9))
         }
         .padding(24)
@@ -136,7 +136,7 @@ struct AchievementShareCard: View {
             Text(achievement.description).font(.subheadline).foregroundStyle(.white.opacity(0.9))
                 .multilineTextAlignment(.center)
             HStack(spacing: 6) {
-                Image(systemName: "fork.knife.circle.fill"); Text("Palate").font(.caption.weight(.bold))
+                Image(systemName: "fork.knife.circle.fill"); Text("Bite").font(.caption.weight(.bold))
             }.foregroundStyle(.white.opacity(0.9))
         }
         .padding(28)
@@ -163,7 +163,7 @@ struct TasteMatchShareCard: View {
                     .font(.subheadline).foregroundStyle(.white.opacity(0.9)).multilineTextAlignment(.center)
             }
             HStack(spacing: 6) {
-                Image(systemName: "fork.knife.circle.fill"); Text("Palate").font(.caption.weight(.bold))
+                Image(systemName: "fork.knife.circle.fill"); Text("Bite").font(.caption.weight(.bold))
             }.foregroundStyle(.white.opacity(0.9))
         }
         .padding(28)

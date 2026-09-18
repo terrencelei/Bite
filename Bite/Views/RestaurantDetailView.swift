@@ -240,6 +240,6 @@ struct RestaurantDetailView: View {
     }
 
     private var shareText: String {
-        "\(restaurant.name) — \(restaurant.cuisine.label) in \(restaurant.neighborhood), \(city?.name ?? ""). \(recommendation?.matchScore.asPercent ?? "") match on Palate."
+        "\(restaurant.name) — \(restaurant.cuisine.label) in \(restaurant.neighborhood), \(city?.name ?? ""). \(recommendation?.matchScore.asPercent ?? "") match on Bite."
     }
 }

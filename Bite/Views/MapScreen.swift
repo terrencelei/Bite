@@ -40,7 +40,7 @@ struct MapScreen: View {
         }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
-        .palateDestinations()
+        .biteDestinations()
         .onAppear { recenter() }
         .onChange(of: cityID) { _, _ in selectedID = nil; recenter() }
     }

@@ -1,8 +1,8 @@
-# Palate
+# Bite
 
 **Find restaurants you'll actually like — through your own taste and people whose taste you trust.**
 
-Palate is a polished SwiftUI prototype for a social restaurant‑discovery network. It answers one question — *"Where should I eat?"* — by combining three reinforcing systems:
+Bite is a polished SwiftUI prototype for a social restaurant‑discovery network. It answers one question — *"Where should I eat?"* — by combining three reinforcing systems:
 
 **Personal taste** (a learned preference model) · **Social discovery** (friends weighted by taste match) · **Exploration** (rankings, achievements, a food passport).
 
@@ -12,7 +12,7 @@ It is inspired by interaction ideas from apps like Beli but is an original produ
 
 ## Running it
 
-1. Open `Palate.xcodeproj` in **Xcode 16+** (built and verified on Xcode 27 / iOS 18 SDK, Swift 5 language mode).
+1. Open `Bite.xcodeproj` in **Xcode 16+** (built and verified on Xcode 27 / iOS 18 SDK, Swift 5 language mode).
 2. Select an **iPhone 16/17** simulator.
 3. **Run** (⌘R).
 
@@ -45,7 +45,7 @@ Every ranking generates preference data, which sharpens recommendations, which d
 Lightweight MVVM‑ish: an `@Observable` store (`AppModel`) is the single source of truth; views observe it and call intent methods; **all domain logic lives in engines, never in views**.
 
 ```
-Palate/
+Bite/
 ├── Models/            Value types: Restaurant, User, TasteVector, Ranking,
 │                      Achievement, Social, Challenge, GroupRecommendation, …
 ├── Engines/           Pure, testable domain logic (no UI):
@@ -95,7 +95,7 @@ Ranking a restaurant nudges the user's preference vector toward its attributes a
 
 ## Design
 
-A warm, appetite‑forward identity (saffron‑coral accent) with generous whitespace and SF Symbols throughout. **Match % is deliberately louder than any star rating** — Palate is not "Yelp with badges." Restaurant imagery is rendered procedurally from a deterministic seed (gradient + cuisine glyph), so the UI is beautiful and **fully functional offline** with no broken images and no network dependency. Full **light & dark mode**, tasteful haptics, and share cards (`ImageRenderer`) for rankings, taste profile, achievements, taste match, and the food passport.
+A warm, appetite‑forward identity (saffron‑coral accent) with generous whitespace and SF Symbols throughout. **Match % is deliberately louder than any star rating** — Bite is not "Yelp with badges." Restaurant imagery is rendered procedurally from a deterministic seed (gradient + cuisine glyph), so the UI is beautiful and **fully functional offline** with no broken images and no network dependency. Full **light & dark mode**, tasteful haptics, and share cards (`ImageRenderer`) for rankings, taste profile, achievements, taste match, and the food passport.
 
 ---
 
@@ -104,5 +104,5 @@ A warm, appetite‑forward identity (saffron‑coral accent) with generous white
 - **No dependencies.** Pure SwiftUI + MapKit + native frameworks.
 - **Prototype data** — Michelin/landmark/popularity flags are clearly mock.
 - Friend profile stats (restaurants/cities/countries) are display seeds; the **current user's** stats and achievement progress are all derived live from actual in‑app data, so they stay internally consistent as you rank.
-- A debug‑only launch hook (`PALATE_SCREEN` / `PALATE_TAB` environment variables, read in `RootView`) jumps directly to a screen for screenshots; it has no effect in normal use.
+- A debug‑only launch hook (`BITE_SCREEN` / `BITE_TAB` environment variables, read in `RootView`) jumps directly to a screen for screenshots; it has no effect in normal use.
 - The seed is tuned so **Taste Profile Pro** sits at 9/10 cuisines — rank any sushi/Japanese/Italian/French/Thai restaurant to trigger a live achievement unlock during a demo.

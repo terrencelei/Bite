@@ -22,7 +22,7 @@ struct SocialFeedView: View {
             .padding(.vertical, 8)
         }
         .navigationTitle("Social")
-        .palateDestinations()
+        .biteDestinations()
         .navigationDestination(for: EatTogetherRoute.self) { _ in EatTogetherView() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

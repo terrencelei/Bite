@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct PalateApp: App {
+struct BiteApp: App {
     @State private var model = AppModel()
 
     var body: some Scene {

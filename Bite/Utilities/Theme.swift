@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Central design system for Palate.
+/// Central design system for Bite.
 ///
 /// The visual identity leans on warm, appetite-forward tones (a saffron/coral accent)
 /// balanced by generous neutrals so restaurant photography stays the hero. Everything

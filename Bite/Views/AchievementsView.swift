@@ -18,7 +18,7 @@ struct AchievementsView: View {
         }
         .navigationTitle("Achievements")
         .navigationBarTitleDisplayMode(.inline)
-        .palateDestinations()
+        .biteDestinations()
     }
 
     // MARK: Recently unlocked
