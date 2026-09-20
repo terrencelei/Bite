@@ -6,18 +6,14 @@ extension Color {
     /// Builds a stable, pleasant color from any string seed.
     /// Used so every restaurant/user gets a consistent identity color offline.
     static func seeded(_ seed: String, saturation: Double = 0.55, brightness: Double = 0.80) -> Color {
-        var hasher = Hasher()
-        hasher.combine(seed)
-        let hash = abs(hasher.finalize())
+        let hash = seed.utf8.reduce(UInt64(14695981039346656037)) { ($0 ^ UInt64($1)) &* 1099511628211 }
         let hue = Double(hash % 360) / 360.0
         return Color(hue: hue, saturation: saturation, brightness: brightness)
     }
 
     /// A two-stop gradient seeded from a string — the basis of procedural food placeholders.
     static func seededPair(_ seed: String) -> (Color, Color) {
-        var hasher = Hasher()
-        hasher.combine(seed)
-        let hash = abs(hasher.finalize())
+        let hash = seed.utf8.reduce(UInt64(14695981039346656037)) { ($0 ^ UInt64($1)) &* 1099511628211 }
         let hue = Double(hash % 360) / 360.0
         let hue2 = (hue + 0.08).truncatingRemainder(dividingBy: 1.0)
         return (

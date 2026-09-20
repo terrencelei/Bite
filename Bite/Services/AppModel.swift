@@ -9,14 +9,14 @@ import Observation
 @Observable
 final class AppModel {
 
-    // MARK: Catalog (immutable)
+    // MARK: Live place catalog and static definitions
 
-    let restaurants: [Restaurant]
-    let restaurantByID: [String: Restaurant]
+    private(set) var restaurants: [Restaurant]
+    private(set) var restaurantByID: [String: Restaurant]
     let allUsers: [User]
     let userByID: [String: User]
-    let cities: [City]
-    let cityByID: [String: City]
+    private(set) var cities: [City]
+    private(set) var cityByID: [String: City]
     let collections: [RestaurantCollection]
     let achievementsCatalog: [Achievement]
     let achievementByID: [String: Achievement]
@@ -51,25 +51,45 @@ final class AppModel {
     let groupEngine: GroupRecommendationEngine = GroupRecommendationEngine()
     private let achievementEngine = AchievementEngine()
 
+    let demoMode: Bool
+    var storageError: String?
+    private var canSave = true
+    var storageReadFailed: Bool { !canSave }
+
     // MARK: Init
 
-    init(persistence: PersistenceService = FilePersistenceService()) {
+    init(persistence: PersistenceService = FilePersistenceService(), demoMode: Bool = false) {
+        self.demoMode = demoMode
         self.persistence = persistence
 
         // Catalog.
-        let restaurants = Restaurants.all
+        let saved: PersistedState?
+        do { saved = try persistence.load() }
+        catch {
+            saved = nil
+            canSave = false
+            storageError = "Your saved data could not be read. It has been preserved. Close and reopen Bite to retry."
+        }
+        let restaurants = saved?.restaurants ?? (demoMode ? Restaurants.all : [])
         self.restaurants = restaurants
-        self.restaurantByID = Dictionary(uniqueKeysWithValues: restaurants.map { ($0.id, $0) })
-        self.allUsers = Users.all
-        self.userByID = Dictionary(uniqueKeysWithValues: Users.all.map { ($0.id, $0) })
-        self.cities = Cities.all
-        self.cityByID = Dictionary(uniqueKeysWithValues: Cities.all.map { ($0.id, $0) })
-        self.collections = Collections.all
-        self.achievementsCatalog = AchievementsCatalog.all
+        self.restaurantByID = Dictionary(restaurants.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+        self.allUsers = demoMode ? Users.all : [User.local]
+        self.userByID = Dictionary(uniqueKeysWithValues: (demoMode ? Users.all : [User.local]).map { ($0.id, $0) })
+        let initialCities = saved?.cities ?? (demoMode ? Cities.all : [])
+        self.cities = initialCities
+        self.cityByID = Dictionary(initialCities.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+        self.collections = demoMode ? Collections.all : []
+        self.achievementsCatalog = AchievementsCatalog.all.filter { achievement in
+            if demoMode { return true }
+            switch achievement.requirement {
+            case .restaurantCount, .countryCount, .cityCount, .asianCityCount, .pairwiseComparisonCount: return true
+            default: return false
+            }
+        }
         self.achievementByID = Dictionary(uniqueKeysWithValues: AchievementsCatalog.all.map { ($0.id, $0) })
 
         // State: restore from disk or seed a fresh world.
-        if let saved = persistence.load() {
+        if let saved {
             self.onboardingComplete = saved.onboardingComplete
             self.rankings = saved.rankings
             self.visits = saved.visits
@@ -80,27 +100,32 @@ final class AppModel {
             self.unlockedAchievements = saved.unlockedAchievements
             self.featuredAchievementIDs = saved.featuredAchievementIDs
             self.likedActivityIDs = Set(saved.likedActivityIDs)
-            self.challenges = saved.challenges.isEmpty ? SeedData.challenges : saved.challenges
-            var user = Users.terrence
+            self.challenges = saved.challenges
+            var user = saved.user ?? (demoMode ? Users.terrence : User.local)
             if let prefs = saved.preferences { user.preferences = prefs }
             self.currentUser = user
-            self.feed = SeedData.feed
+            self.feed = saved.feed ?? (demoMode ? SeedData.feed : [])
+            if saved.feed == nil {
+                for i in feed.indices where likedActivityIDs.contains(feed[i].id) {
+                    feed[i].likedByCurrentUser = true
+                    feed[i].likeCount += 1
+                }
+            }
         } else {
-            // Terrence is an established user — launch straight into the product for demos.
-            // Onboarding remains reachable via Profile → "Reset demo data".
-            self.onboardingComplete = true
-            self.rankings = SeedData.rankings
-            self.visits = SeedData.visits
-            self.wantToTryIDs = ["sh-linglong", "sh-hakkasan", "se-mingles", "ny-atomix"]
-            self.friendIDs = Users.friends.map(\.id)
-            self.comparisonCount = SeedData.seededComparisonCount
-            self.groupRecCount = SeedData.seededGroupRecCount
-            self.unlockedAchievements = SeedData.recentlyUnlockedDates
+            // Example data is opt-in for tests; the app starts with a clean local profile.
+            self.onboardingComplete = demoMode
+            self.rankings = demoMode ? SeedData.rankings : []
+            self.visits = demoMode ? SeedData.visits : []
+            self.wantToTryIDs = demoMode ? ["sh-linglong", "sh-hakkasan", "se-mingles", "ny-atomix"] : []
+            self.friendIDs = demoMode ? Users.friends.map(\.id) : []
+            self.comparisonCount = demoMode ? SeedData.seededComparisonCount : 0
+            self.groupRecCount = demoMode ? SeedData.seededGroupRecCount : 0
+            self.unlockedAchievements = demoMode ? SeedData.recentlyUnlockedDates : [:]
             self.featuredAchievementIDs = []
             self.likedActivityIDs = []
-            self.challenges = SeedData.challenges
-            self.currentUser = Users.terrence
-            self.feed = SeedData.feed
+            self.challenges = demoMode ? SeedData.challenges : []
+            self.currentUser = demoMode ? Users.terrence : User.local
+            self.feed = demoMode ? SeedData.feed : []
         }
 
         recomputeAchievements(celebrate: false)
@@ -123,25 +148,40 @@ final class AppModel {
         state.likedActivityIDs = Array(likedActivityIDs)
         state.preferences = currentUser.preferences
         state.challenges = challenges
-        persistence.save(state)
+        guard canSave else { return }
+        state.feed = feed
+        state.user = currentUser
+        let retained = rankedRestaurantIDs.union(wantToTryIDs).union(visits.map(\.restaurantID))
+        state.restaurants = restaurants.filter { retained.contains($0.id) }
+        state.cities = cities
+        do { try persistence.save(state); storageError = nil }
+        catch { storageError = "Changes could not be saved. Free some device storage, then tap Retry." }
     }
 
-    /// Wipe user state back to the seeded world (used by onboarding "start over" & dev).
+    /// Delete live user state, or restore fixtures when explicitly running a demo.
     func resetToSeed() {
-        persistence.reset()
+        do { try persistence.reset() }
+        catch { storageError = "Could not reset your data. Please try again."; return }
+        canSave = true
+        storageError = nil
+        pendingUnlocks = []
+        restaurants = demoMode ? Restaurants.all : []
+        restaurantByID = Dictionary(restaurants.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+        cities = demoMode ? Cities.all : []
+        cityByID = Dictionary(uniqueKeysWithValues: cities.map { ($0.id, $0) })
         onboardingComplete = false
-        rankings = SeedData.rankings
-        visits = SeedData.visits
-        wantToTryIDs = ["sh-linglong", "sh-hakkasan", "se-mingles", "ny-atomix"]
-        friendIDs = Users.friends.map(\.id)
-        comparisonCount = SeedData.seededComparisonCount
-        groupRecCount = SeedData.seededGroupRecCount
-        unlockedAchievements = SeedData.recentlyUnlockedDates
+        rankings = demoMode ? SeedData.rankings : []
+        visits = demoMode ? SeedData.visits : []
+        wantToTryIDs = demoMode ? ["sh-linglong", "sh-hakkasan", "se-mingles", "ny-atomix"] : []
+        friendIDs = demoMode ? Users.friends.map(\.id) : []
+        comparisonCount = demoMode ? SeedData.seededComparisonCount : 0
+        groupRecCount = demoMode ? SeedData.seededGroupRecCount : 0
+        unlockedAchievements = demoMode ? SeedData.recentlyUnlockedDates : [:]
         featuredAchievementIDs = []
         likedActivityIDs = []
-        challenges = SeedData.challenges
-        currentUser = Users.terrence
-        feed = SeedData.feed
+        challenges = demoMode ? SeedData.challenges : []
+        currentUser = demoMode ? Users.terrence : User.local
+        feed = demoMode ? SeedData.feed : []
         recomputeAchievements(celebrate: false)
         autoFeatureAchievements()
         persist()
@@ -154,7 +194,7 @@ final class AppModel {
     var homeCityID: String { currentUser.cityIDs.first ?? "shanghai" }
 
     func restaurant(_ id: String) -> Restaurant? { restaurantByID[id] }
-    func user(_ id: String) -> User? { userByID[id] }
+    func user(_ id: String) -> User? { id == currentUser.id ? currentUser : userByID[id] }
     func city(_ id: String) -> City? { cityByID[id] }
     func currency(for cityID: String) -> String { cityByID[cityID]?.currency ?? "$" }
 
@@ -277,8 +317,10 @@ final class AppModel {
             }
             s.neighborhoods.insert("\(r.cityID)|\(r.neighborhood)")
             s.neighborhoodsByCity[r.cityID, default: []].insert(r.neighborhood)
-            s.cuisineFamilies.insert(r.cuisine.family)
-            s.cuisineFamilyCounts[r.cuisine.family, default: 0] += 1
+            if r.cuisine != .restaurant {
+                s.cuisineFamilies.insert(r.cuisine.family)
+                s.cuisineFamilyCounts[r.cuisine.family, default: 0] += 1
+            }
             if r.isLandmark { s.landmarksVisited += 1 }
             if r.isMichelin { s.michelinVisited += 1 }
             // "Early discovery": user ranked a now-trending spot that was quiet early on.
@@ -294,5 +336,18 @@ final class AppModel {
             s.collectionMatched[c.id] = c.restaurantIDs.filter { rankedIDs.contains($0) }.count
         }
         return s
+    }
+
+    func mergeListings(_ incoming: [Restaurant], cities incomingCities: [City]) {
+        for r in incoming { restaurantByID[r.id] = r }
+        // Keep personal places, but bound transient search data.
+        let retained = rankedRestaurantIDs.union(wantToTryIDs).union(visits.map(\.restaurantID))
+        let recent = restaurantByID.values.sorted { ($0.listing?.fetchedAt ?? .distantPast) > ($1.listing?.fetchedAt ?? .distantPast) }
+        let keep = retained.union(recent.prefix(500).map(\.id))
+        restaurantByID = restaurantByID.filter { keep.contains($0.key) }
+        restaurants = restaurantByID.values.sorted { $0.name < $1.name }
+        for c in incomingCities { cityByID[c.id] = c }
+        cities = cityByID.values.sorted { $0.name < $1.name }
+        persist()
     }
 }

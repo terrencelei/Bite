@@ -17,39 +17,41 @@ struct PersistedState: Codable {
     /// The current user's (drifting) preference vector.
     var preferences: TasteVector? = nil
     var challenges: [Challenge] = []
+    var feed: [SocialActivity]? = nil
+    var restaurants: [Restaurant]? = nil
+    var cities: [City]? = nil
+    var user: User? = nil
 }
 
 /// Loads/saves `PersistedState`. A thin protocol keeps the door open for a real
 /// networked backend later; `FilePersistenceService` is the local implementation.
 protocol PersistenceService {
-    func load() -> PersistedState?
-    func save(_ state: PersistedState)
-    func reset()
+    func load() throws -> PersistedState?
+    func save(_ state: PersistedState) throws
+    func reset() throws
 }
 
 /// JSON-file persistence in the app's Documents directory.
 final class FilePersistenceService: PersistenceService {
     private let url: URL
-    private let queue = DispatchQueue(label: "com.bite.persistence")
 
-    init(filename: String = "bite_state.json") {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    init(filename: String = "bite_live_state.json", directory: URL? = nil) {
+        let docs = directory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         url = docs.appendingPathComponent(filename)
     }
 
-    func load() -> PersistedState? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONDecoder().decode(PersistedState.self, from: data)
+    func load() throws -> PersistedState? {
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return try JSONDecoder().decode(PersistedState.self, from: Data(contentsOf: url))
     }
 
-    func save(_ state: PersistedState) {
-        queue.async { [url] in
-            guard let data = try? JSONEncoder().encode(state) else { return }
-            try? data.write(to: url, options: .atomic)
-        }
+    func save(_ state: PersistedState) throws {
+        let data = try JSONEncoder().encode(state)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
-    func reset() {
-        try? FileManager.default.removeItem(at: url)
+    func reset() throws {
+        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
 }

@@ -45,6 +45,7 @@ enum TasteDimension: String, CaseIterable, Codable, Hashable {
 /// A restaurant's headline cuisine. Each maps to an SF Symbol + color and to the taste
 /// dimensions it activates, so mock data stays terse while vectors stay rich.
 enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
+    case restaurant
     case modernChinese, sichuan, cantonese, shanghainese, hotpot, yunnan
     case sushi, ramen, izakaya, japanese
     case korean, koreanBBQ
@@ -55,6 +56,7 @@ enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
 
     var label: String {
         switch self {
+        case .restaurant: return "Restaurant"
         case .modernChinese: return "Modern Chinese"
         case .sichuan: return "Sichuan"
         case .cantonese: return "Cantonese"
@@ -83,6 +85,7 @@ enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
     /// SF Symbol used across cards and procedural imagery.
     var symbol: String {
         switch self {
+        case .restaurant: return "fork.knife"
         case .modernChinese, .shanghainese, .cantonese, .yunnan: return "takeoutbag.and.cup.and.straw.fill"
         case .sichuan, .hotpot: return "flame.fill"
         case .sushi: return "fish.fill"
@@ -103,6 +106,7 @@ enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
     /// The taste dimensions this cuisine primarily activates (weight 0...1).
     var dimensionWeights: [TasteDimension: Double] {
         switch self {
+        case .restaurant: return [:]
         case .modernChinese: return [.chinese: 1, .novelty: 0.6, .atmosphere: 0.6]
         case .sichuan: return [.chinese: 0.7, .sichuan: 1, .spicy: 0.9, .authenticity: 0.6]
         case .cantonese: return [.chinese: 0.8, .cantonese: 1, .authenticity: 0.6]
@@ -131,6 +135,7 @@ enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
     /// Cuisine "family" used for cuisine-depth achievements (e.g. all ramen counts as ramen).
     var family: String {
         switch self {
+        case .restaurant: return "Unknown"
         case .modernChinese, .shanghainese, .cantonese, .yunnan: return "Chinese"
         case .sichuan: return "Sichuan"
         case .hotpot: return "Hot Pot"
@@ -153,13 +158,14 @@ enum Cuisine: String, CaseIterable, Codable, Hashable, Identifiable {
 // MARK: - Price
 
 enum PriceLevel: Int, Codable, CaseIterable, Comparable, Hashable {
+    case unknown = 0
     case budget = 1, moderate = 2, upscale = 3, luxury = 4
 
     static func < (lhs: PriceLevel, rhs: PriceLevel) -> Bool { lhs.rawValue < rhs.rawValue }
 
     /// Currency-aware glyphs, e.g. "¥¥¥" or "$$$".
     func display(currency: String) -> String {
-        String(repeating: currency, count: rawValue)
+        self == .unknown ? "Price unavailable" : String(repeating: currency, count: rawValue)
     }
 }
 

@@ -5,6 +5,20 @@
 	};
 	objectVersion = 70;
 	objects = {
+        2A000000000000000000000C = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Bite.app; sourceTree = BUILT_PRODUCTS_DIR; };
+
+        2A0000000000000000000001 = {isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
+        2A0000000000000000000002 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = BiteUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        2A0000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        2A0000000000000000000004 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        2A0000000000000000000005 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        2A0000000000000000000006 = {isa = PBXContainerItemProxy; containerPortal = 1A0000000000000000000001; proxyType = 1; remoteGlobalIDString = 1A0000000000000000000005; remoteInfo = Bite; };
+        2A0000000000000000000007 = {isa = PBXTargetDependency; target = 1A0000000000000000000005; targetProxy = 2A0000000000000000000006; };
+        2A0000000000000000000008 = {isa = PBXNativeTarget; buildConfigurationList = 2A0000000000000000000009; buildPhases = (2A0000000000000000000003, 2A0000000000000000000004, 2A0000000000000000000005); buildRules = (); dependencies = (2A0000000000000000000007); fileSystemSynchronizedGroups = (2A0000000000000000000001); name = BiteUITests; productName = BiteUITests; productReference = 2A0000000000000000000002; productType = "com.apple.product-type.bundle.ui-testing"; };
+        2A0000000000000000000009 = {isa = XCConfigurationList; buildConfigurations = (2A000000000000000000000A, 2A000000000000000000000B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        2A000000000000000000000A = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.terrencelei.bite.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = Bite; }; name = Debug; };
+        2A000000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.terrencelei.bite.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = Bite; }; name = Release; };
+
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1A0000000000000000000006 /* Bite */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Bite; sourceTree = "<group>"; };
@@ -25,6 +39,7 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000006 /* Bite */,
+                2A0000000000000000000001 /* UITests */,
 				1A0000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -32,6 +47,8 @@
 		1A0000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+                2A0000000000000000000002,
+                2A000000000000000000000C,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -56,6 +73,7 @@
 			);
 			name = Bite;
 			productName = Bite;
+            productReference = 2A000000000000000000000C;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -87,6 +105,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                2A0000000000000000000008,
 				1A0000000000000000000005 /* Bite */,
 			);
 		};

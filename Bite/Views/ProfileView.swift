@@ -6,6 +6,7 @@ struct ProfileView: View {
     @Environment(AppModel.self) private var model
     @State private var showTasteShare = false
     @State private var showSettings = false
+    @State private var confirmReset = false
 
     var body: some View {
         ScrollView {
@@ -13,9 +14,9 @@ struct ProfileView: View {
                 header
                 statsGrid
                 featured
-                tasteProfile
+                if model.demoMode { tasteProfile }
                 quickLinks
-                challengesPreview
+                if !model.challenges.isEmpty { challengesPreview }
                 Color.clear.frame(height: 8)
             }
             .padding()
@@ -32,10 +33,16 @@ struct ProfileView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button { showTasteShare = true } label: { Label("Share Taste Profile", systemImage: "square.and.arrow.up") }
-                    Button(role: .destructive) { model.resetToSeed() } label: { Label("Reset demo data", systemImage: "arrow.counterclockwise") }
+                    if model.demoMode {
+                        Button { showTasteShare = true } label: { Label("Share Taste Profile", systemImage: "square.and.arrow.up") }
+                    }
+                    Button(role: .destructive) { confirmReset = true } label: { Label("Delete local data", systemImage: "trash") }
                 } label: { Image(systemName: "ellipsis.circle") }
             }
+        }
+        .confirmationDialog("Delete your saved places and rankings from this device?", isPresented: $confirmReset, titleVisibility: .visible) {
+            Button("Delete local data", role: .destructive) { model.resetToSeed() }
+            Button("Cancel", role: .cancel) { }
         }
         .sheet(isPresented: $showTasteShare) {
             ShareCardSheet {
@@ -150,8 +157,10 @@ struct ProfileView: View {
             linkRow(.achievements, "Achievements", "rosette", model.achievementsCatalog.filter { model.isUnlocked($0.id) }.count)
             Divider().padding(.leading, 52)
             linkRow(.passport, "Food Passport", "book.pages.fill", model.passport().reduce(0) { $0 + $1.total })
-            Divider().padding(.leading, 52)
-            linkRow(.challenges, "Challenges", "flag.checkered", model.challenges.filter { !$0.isComplete }.count)
+            if !model.challenges.isEmpty {
+                Divider().padding(.leading, 52)
+                linkRow(.challenges, "Challenges", "flag.checkered", model.challenges.filter { !$0.isComplete }.count)
+            }
         }
         .cardSurface()
     }

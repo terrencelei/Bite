@@ -38,7 +38,8 @@ extension AppModel {
                          candidates: [Restaurant]? = nil,
                          excludeVisited: Bool = true,
                          limit: Int = 20) -> [Recommendation] {
-        var pool = candidates ?? restaurants
+        var pool = (candidates ?? restaurants).filter { $0.listing == nil }
+        if let budget = context?.maxPrice { pool = pool.filter { $0.price != .unknown && $0.price <= budget } }
         if excludeVisited {
             let visited = Set(visits.map(\.restaurantID))
             pool = pool.filter { !visited.contains($0.id) }
@@ -48,7 +49,7 @@ extension AppModel {
 
     /// A single restaurant's personalized match + reasons (for detail screens & cards).
     func recommendation(for id: String, context: RecommendationContext? = nil) -> Recommendation? {
-        guard let r = restaurantByID[id] else { return nil }
+        guard let r = restaurantByID[id], r.listing == nil else { return nil }
         return recommender.recommend(makeInput(candidates: [r]), context: context, limit: 1).first
     }
 
@@ -166,7 +167,7 @@ extension AppModel {
             return RankingSession(newRestaurantID: restaurantID, scopeName: "Overall", existing: [])
         }
         let cityScope = RankingScope(kind: .city(r.cityID), title: "", subtitle: "", symbol: "")
-        let existing = entries(in: cityScope).map(\.entry)
+        let existing = entries(in: cityScope).map(\.entry).filter { $0.restaurantID != restaurantID }
         return RankingSession(newRestaurantID: restaurantID,
                               scopeName: cityByID[r.cityID]?.name ?? "Overall",
                               existing: existing)
@@ -177,6 +178,7 @@ extension AppModel {
     @discardableResult
     func applyRanking(session: RankingSession, tags: [QualityTag]) -> RankingEntry {
         let rid = session.newRestaurantID
+        let isNewVisit = !rankedRestaurantIDs.contains(rid)
         markVisited(rid, tags: tags)
 
         // Clear any prior "NEW" flags, then insert/replace this entry as NEW.
@@ -195,10 +197,10 @@ extension AppModel {
 
         // Online taste learning: drift toward what we just ranked, reinforce tagged axes.
         if let r = restaurantByID[rid] {
-            currentUser.preferences.nudge(toward: r.attributes, rate: 0.08)
+            if r.listing == nil { currentUser.preferences.nudge(toward: r.attributes, rate: 0.08) }
             let tagDims = tags.flatMap { $0.dimensions }
             currentUser.preferences.reinforce(tagDims, by: 0.03)
-            advanceChallengesAfterRanking(restaurant: r)
+            if isNewVisit { advanceChallengesAfterRanking(restaurant: r) }
             prependFeedRanking(for: r)
         }
 
@@ -247,7 +249,7 @@ extension AppModel {
 @MainActor
 extension AppModel {
     func groupRecommendations(request: GroupRequest) -> [GroupPick] {
-        let members = request.memberIDs.compactMap { userByID[$0] }
+        let members = request.memberIDs.compactMap { user($0) }
         return groupEngine.recommend(members: members, candidates: restaurants, request: request)
     }
 }

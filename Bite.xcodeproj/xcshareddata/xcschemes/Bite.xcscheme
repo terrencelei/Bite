@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1A0000000000000000000005"
-               BuildableName = "Bite"
+               BuildableName = "Bite.app"
                ReferencedContainer = "container:Bite.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,6 +28,18 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "2A0000000000000000000008"
+               BuildableName = "BiteUITests.xctest"
+               BlueprintName = "BiteUITests"
+               ReferencedContainer = "container:Bite.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -40,6 +52,16 @@
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES"
       queueDebuggingEnabled = "No">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "1A0000000000000000000005"
+            BuildableName = "Bite.app"
+            BlueprintName = "Bite"
+            ReferencedContainer = "container:Bite.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -51,7 +73,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1A0000000000000000000005"
-            BuildableName = "Bite"
+            BuildableName = "Bite.app"
             ReferencedContainer = "container:Bite.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

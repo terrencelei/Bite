@@ -4,16 +4,25 @@ import SwiftUI
 /// achievement-unlock celebration above everything when the engine reports a new unlock.
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(NearbySearchStore.self) private var nearby
 
     /// Debug-only: `BITE_SCREEN` env var jumps straight to a screen for screenshotting.
     private var debugScreen: String? {
+        #if DEBUG
+        guard model.demoMode else { return nil }
         let v = ProcessInfo.processInfo.environment["BITE_SCREEN"]
         return (v?.isEmpty ?? true) ? nil : v
+        #else
+        return nil
+        #endif
     }
 
     var body: some View {
         ZStack {
-            if let screen = debugScreen {
+            if model.storageReadFailed {
+                ContentUnavailableView("Saved data unavailable", systemImage: "externaldrive.badge.exclamationmark",
+                    description: Text(model.storageError ?? "Close and reopen Bite to retry."))
+            } else if let screen = debugScreen {
                 DebugScreenHost(screen: screen)
             } else if model.onboardingComplete {
                 MainTabView()
@@ -33,6 +42,17 @@ struct RootView: View {
                 .transition(.opacity.combined(with: .scale(scale: 1.05)))
                 .zIndex(10)
             }
+        }
+        .safeAreaInset(edge: .top) {
+            if let error = model.storageError, !model.storageReadFailed {
+                HStack {
+                    Text(error).font(.footnote)
+                    Button("Retry") { model.persist() }
+                }.padding().background(.regularMaterial)
+            }
+        }
+        .onChange(of: model.onboardingComplete) { _, complete in
+            if !complete { nearby.clear() }
         }
         .animation(.easeInOut, value: model.onboardingComplete)
         .animation(.spring, value: model.pendingUnlocks.count)
@@ -76,12 +96,12 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack { DiscoverView() }
+            NavigationStack { NearbyRestaurantsView() }
                 .tabItem { Label("Discover", systemImage: "sparkles") }
                 .tag(AppTab.discover)
 
-            NavigationStack { SocialFeedView() }
-                .tabItem { Label("Social", systemImage: "person.2.fill") }
+            NavigationStack { SavedRestaurantsView() }
+                .tabItem { Label("Saved", systemImage: "bookmark.fill") }
                 .tag(AppTab.social)
 
             NavigationStack { MapScreen() }

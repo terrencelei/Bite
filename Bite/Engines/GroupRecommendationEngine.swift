@@ -11,7 +11,9 @@ struct GroupRecommendationEngine {
     private let lambda = 0.6
 
     func recommend(members: [User], candidates: [Restaurant], request: GroupRequest, limit: Int = 5) -> [GroupPick] {
+        guard !members.isEmpty else { return [] }
         let filtered = candidates.filter { r in
+            guard r.listing == nil, r.price != .unknown else { return false }
             guard r.cityID == request.cityID else { return false }
             guard r.price <= request.maxPrice else { return false }
             if let fam = request.cuisineFamily, r.cuisine.family != fam { return false }

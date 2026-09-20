@@ -1,0 +1,15 @@
+name: Build and core tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core regression tests
+        run: swift test
+      - name: iOS simulator build
+        run: xcodebuild -project Bite.xcodeproj -scheme Bite -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

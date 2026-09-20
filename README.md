@@ -1,108 +1,90 @@
 # Bite
 
-**Find restaurants you'll actually like — through your own taste and people whose taste you trust.**
+[Website](https://terrencelei.github.io/Bite/) · [中文介绍](https://terrencelei.github.io/Bite/zh/) · [Privacy](PRIVACY.md)
 
-Bite is a polished SwiftUI prototype for a social restaurant‑discovery network. It answers one question — *"Where should I eat?"* — by combining three reinforcing systems:
+Bite is an iOS restaurant discovery app built with SwiftUI, MapKit, and Core Location. The normal app uses **live Apple Maps listings**, starts with an empty personal history, and stores saved restaurants and rankings on the device.
 
-**Personal taste** (a learned preference model) · **Social discovery** (friends weighted by taste match) · **Exploration** (rankings, achievements, a food passport).
+## Run
 
-It is inspired by interaction ideas from apps like Beli but is an original product: its own information architecture, recommendation engine, ranking system, visual identity, and achievement design. No backend, no API keys, no third‑party dependencies — it compiles and runs directly in Xcode against the iOS 18 simulator.
+1. Open `Bite.xcodeproj` in Xcode 16 or newer.
+2. Choose the `Bite` scheme and an iOS 18+ device or simulator.
+3. Run, finish the short welcome screen, and tap **Near me** or enter a city, neighborhood, or address.
 
----
+No API keys or third-party packages are required. Live search and map tiles need a network connection. In Simulator, set a simulated location (Features → Location) before using Near me. On a physical device, choose your own signing team.
 
-## Running it
+## What works
 
-1. Open `Bite.xcodeproj` in **Xcode 16+** (built and verified on Xcode 27 / iOS 18 SDK, Swift 5 language mode).
-2. Select an **iPhone 16/17** simulator.
-3. **Run** (⌘R).
+- **Discover:** search an area and optionally narrow by restaurant name or cuisine. Results come from Apple Maps, not the old example catalog.
+- **Map:** show your location, pan and zoom anywhere, and tap **Search this area**. Switch between restaurant search results, saved places, and places you have ranked. Native restaurant POIs on the map can also be opened and saved, even if they were not returned in the latest search.
+- **Restaurant detail:** real name, address, available phone/website information, and an Apple Maps link. Save a restaurant or start the pairwise ranking flow.
+- **Saved and Rankings:** retained place details survive relaunch and remain available offline. Ranking removes a restaurant from Want to Try. Re-ranking excludes self-comparisons.
+- **Profile and Food Passport:** statistics come from your own rankings. Deleting local data requires an explicit confirmation in the app.
+- Location permission is requested only when you tap Near me. Denied permission, unavailable GPS, empty searches, and failed network requests have recovery guidance. You can search manually without location access.
 
-The app launches as the seeded user **Terrence**, already established with 24 ranked restaurants across 5 cities, 8 friends, and in‑progress achievements — so Discover is immediately personalized. First‑run **onboarding** is reachable any time via **Profile → ⋯ → Reset demo data**.
+### Search coverage and metadata
 
-State (rankings, saves, friends, unlocked achievements, taste drift) persists locally between launches in a JSON file in the app's Documents directory.
+Apple Maps search is a ranked search service, **not an exhaustive export of every restaurant in a region**. Bite shows the results returned inside the requested map region without imposing an additional display limit. Search by name/cuisine or move to a smaller area to find more places. Very broad map searches ask you to zoom in. Coverage and place accuracy depend on Apple Maps.
 
----
+The API does not provide verified menu prices, cuisine-specific taste vectors, restaurant photos, Michelin ratings, or social activity. Bite does not invent those fields: price is shown as unavailable, generic restaurants remain uncategorized, and live listings have no fabricated match percentages or suggested dishes. Illustrations are placeholders, not restaurant photographs. The demo-only social/recommendation screens and seed data remain in source for regression tests; the normal app does not expose the seeded social network.
 
-## The product loop
+## Persistence and the previous prototype
 
+Live user data is in `Documents/bite_live_state.json`. The old prototype's `bite_state.json` is left untouched and is not imported, because it contains fictional rankings and friends. The user starts fresh when moving from that prototype to this version.
+
+Only saved/visited/ranked restaurant details are retained on disk; transient search results are bounded in memory. Writes are atomic and use file protection. Save failures appear in the app and can be retried. Unreadable data is preserved and blocks the normal interface instead of being silently replaced. No device location history is stored. See [PRIVACY.md](PRIVACY.md).
+
+## Tests
+
+Run the deterministic domain, persistence, and search-coordination tests on macOS 15+:
+
+```sh
+swift test
 ```
-DISCOVER → VISIT → RANK → LEARN → ACHIEVE → SHARE → FRIENDS DISCOVER → BETTER DATA → BETTER RECOMMENDATIONS
+
+Build for an iOS simulator:
+
+```sh
+xcodebuild -project Bite.xcodeproj -scheme Bite \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
-Every ranking generates preference data, which sharpens recommendations, which drives more visits. A ready‑made demo:
+The `BiteUITests` target exercises live search, saving/relaunch, and location permission flows. These integration tests need network access, an English-language simulator, and a simulated location, for example:
 
-1. Open **Discover** → a restaurant shows e.g. **77% MATCH** with a personalized reason.
-2. Open it → tap **Been** → answer a few **A/B comparisons**.
-3. It animates into your **Shanghai ranking**; your taste vector nudges; the feed posts it.
-4. The **AchievementEngine** notices — ranking a sushi/Italian spot crosses **Taste Profile Pro (9→10 cuisines)** and the unlock celebration fires.
-5. Open a friend → see your **Taste Match** and where you agree/disagree.
-6. Open **Eat Together** → pick friends → get a **group match** that balances everyone's satisfaction.
-7. Open **Food Passport** → see your geography as collectible stamps.
+```sh
+xcrun simctl location booted set 37.7749,-122.4194
+xcodebuild -project Bite.xcodeproj -scheme Bite \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO test
+```
 
----
+## Release scope
+
+This is a stronger local-first foundation, not a complete social-service launch. Accounts, cloud backup/sync, real friendships and shared feeds, richer licensed place metadata/photos, and App Store submission remain separate work. Device testing and release privacy disclosures must reflect the final distributed build. The English and Chinese website pages under `docs/` document the current app with real simulator screenshots. The app interface is currently English; the Chinese website does not imply app localization.
 
 ## Architecture
 
-Lightweight MVVM‑ish: an `@Observable` store (`AppModel`) is the single source of truth; views observe it and call intent methods; **all domain logic lives in engines, never in views**.
+- `NearbySearchStore` coordinates explicit searches, cancels superseded work, and prevents stale results from replacing a newer area.
+- `AppleRestaurantSearch` retrieves and maps Apple Maps listings, prefers provider place IDs, and filters results to the requested region.
+- `LocationService` handles one-time location requests, denied permissions, and timeouts.
+- `AppModel` owns the live catalog and personal state; `FilePersistenceService` writes protected, atomic JSON snapshots.
+- Pure ranking and achievement engines are covered by the `BiteCore` Swift package tests. Seed fixtures are opt-in for regression tests.
 
-```
-Bite/
-├── Models/            Value types: Restaurant, User, TasteVector, Ranking,
-│                      Achievement, Social, Challenge, GroupRecommendation, …
-├── Engines/           Pure, testable domain logic (no UI):
-│   ├── RecommendationEngine    taste + friends + context + popularity + novelty
-│   ├── RankingEngine           binary‑search placement + Bradley‑Terry scores
-│   ├── AchievementEngine       data‑driven progress from a stats snapshot
-│   ├── GroupRecommendationEngine   mean satisfaction − disagreement penalty
-│   └── TasteMatch              calibrated cosine similarity between users
-├── Services/
-│   ├── AppModel(+Derived)      the store: state, intents, derived queries
-│   ├── PersistenceService      swappable protocol; local JSON implementation
-│   └── MockData/               cities, 43 restaurants, 9 users, achievements,
-│                               collections, and the seeded starting world
-├── Components/        Reusable UI: RestaurantCard, MatchBadge, FriendAvatar,
-│                      Chips/FlowLayout, RankingRow, AchievementBadge,
-│                      PassportStamp, ProfileStat, SocialActivityCard, …
-├── Views/             One file per surface (Discover, Detail, RankingFlow,
-│                      Rankings, Social, Map, EatTogether, Profile,
-│                      Achievements, FoodPassport, Onboarding, ShareCards)
-└── Utilities/         Theme (design system), Haptics, extensions
+## Website and deployment
+
+GitHub Pages publishes the `docs/` directory from `main` at <https://terrencelei.github.io/Bite/>. Both language pages share `docs/assets/site.css`; current screenshots are under `docs/assets/live/`. Earlier prototype screenshots remain under `docs/assets/screens/` for history and are not used by the current website.
+
+Preview the website locally:
+
+```sh
+python3 -m http.server 8000 --directory docs
+# Open http://localhost:8000/ and http://localhost:8000/zh/
 ```
 
-### Shared taste space
-Both restaurants (as **attribute vectors**) and users (as **preference vectors**) are embedded in the same 19‑dimension `TasteVector` (cuisines, style, values, flavor). This makes match %, taste‑match, and group scoring all reduce to vector math over one basis.
+Pushes to `main` trigger GitHub Pages deployment. The separate `Build and core tests` workflow checks the app and core tests on pushes and pull requests. The live-network UI tests are run separately on a configured simulator.
 
-### RecommendationEngine
-```
-Score = 0.45·Taste + 0.25·Friend + 0.20·Context + 0.05·Popularity + 0.05·Novelty
-```
-- **Taste** — cosine similarity of user prefs to restaurant attributes.
-- **Friend** — friends who ranked/saved it, weighted by *their* taste match with you.
-- **Context** — compatibility with the current "What are you looking for?" request.
-- **Novelty** — rewards unvisited spots and unexplored cuisines.
+## Verified changes
 
-Every recommendation carries **explainable reasons** ("Matches your love of Sichuan", "Jason, a 96% taste match, ranks it #1 for Sichuan", "12 minutes away"). The blend is mapped into a believable, well‑spread Match %. The engine is a `protocol` (`RecommendationProviding`) so a real ML/remote service can drop in later.
-
-### RankingEngine
-Marking **Been** starts a `RankingSession`: ~log₂(n) A/B comparisons via **binary‑search placement**, layered with **Bradley‑Terry** latent‑score updates on the compared restaurants so leaderboards have smooth, comparable strengths. Optional "what made it better?" tags feed the taste model.
-
-### AchievementEngine
-Fully **data‑driven**: 40+ achievements are pure declarations (`requirement`, `rarity`, `kind`). The engine computes progress against an `AchievementStats` snapshot built from live data, detects newly‑crossed unlocks, and surfaces them for the celebration overlay. Three collectible kinds — **Badges** (expertise), **Stamps** (places), **Awards** (accomplishments) — across five rarities. No achievement logic lives in views.
-
-### Online taste learning
-Ranking a restaurant nudges the user's preference vector toward its attributes and reinforces any tagged dimensions, so Discover measurably shifts as you use the app.
-
----
-
-## Design
-
-A warm, appetite‑forward identity (saffron‑coral accent) with generous whitespace and SF Symbols throughout. **Match % is deliberately louder than any star rating** — Bite is not "Yelp with badges." Restaurant imagery is rendered procedurally from a deterministic seed (gradient + cuisine glyph), so the UI is beautiful and **fully functional offline** with no broken images and no network dependency. Full **light & dark mode**, tasteful haptics, and share cards (`ImageRenderer`) for rankings, taste profile, achievements, taste match, and the food passport.
-
----
-
-## Notes for reviewers
-
-- **No dependencies.** Pure SwiftUI + MapKit + native frameworks.
-- **Prototype data** — Michelin/landmark/popularity flags are clearly mock.
-- Friend profile stats (restaurants/cities/countries) are display seeds; the **current user's** stats and achievement progress are all derived live from actual in‑app data, so they stay internally consistent as you rank.
-- A debug‑only launch hook (`BITE_SCREEN` / `BITE_TAB` environment variables, read in `RootView`) jumps directly to a screen for screenshots; it has no effect in normal use.
-- The seed is tuned so **Taste Profile Pro** sits at 9/10 cuisines — rank any sushi/Japanese/Italian/French/Thai restaurant to trigger a live achievement unlock during a demo.
+- Live area/name/cuisine search, nearby location access, and native map restaurant selection.
+- Clean first-run profile; existing prototype data preserved separately.
+- Fixed self-comparisons during re-ranking, lost feed/like state after relaunch, stale current-user group preferences, and budget filtering.
+- Removed the five-comparison cap so larger ranking lists can resolve the full insertion position.
+- Added 13 deterministic core tests and 3 simulator UI tests. Debug and Release simulator builds and the UI flows passed locally during this update.

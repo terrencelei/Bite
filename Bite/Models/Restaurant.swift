@@ -41,10 +41,22 @@ struct Restaurant: Identifiable, Codable, Hashable {
     let dishes: [Dish]
     let blurb: String
 
+    /// Present only for listings retrieved from Apple Maps. Unknown attributes stay unknown.
+    var listing: RestaurantListing? = nil
+
     // Derived helpers -------------------------------------------------------
 
     /// Prices formatted for the restaurant's home city currency (resolved by the store).
     func priceString(currency: String) -> String { price.display(currency: currency) }
 
     var isMichelin: Bool { michelinStars > 0 }
+}
+
+struct RestaurantListing: Codable, Hashable {
+    var providerID: String?
+    var address: String
+    var phone: String?
+    var website: URL?
+    var mapsURL: URL?
+    var fetchedAt: Date
 }

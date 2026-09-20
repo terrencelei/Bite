@@ -85,8 +85,7 @@ struct RankingsView: View {
         } description: {
             Text("Start ranking restaurants you've visited and we'll learn your taste.")
         } actions: {
-            NavigationLink(value: model.restaurants.first!) { Text("Find something to rank") }
-                .buttonStyle(.borderedProminent).tint(Theme.accent)
+            Text("Find a restaurant in Discover or Map, then tap Been.")
         }
     }
 }

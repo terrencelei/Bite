@@ -22,7 +22,8 @@ struct RestaurantDetailView: View {
                 actionButtons.padding(.horizontal)
                 if isRanked { rankingContext.padding(.horizontal) }
                 whyYoullLikeIt.padding(.horizontal)
-                dishes
+                if !restaurant.dishes.isEmpty { dishes }
+                if let listing = restaurant.listing { listingDetails(listing).padding(.horizontal) }
                 friendActivity.padding(.horizontal)
                 mapBlock.padding(.horizontal)
                 Color.clear.frame(height: 16)
@@ -97,6 +98,7 @@ struct RestaurantDetailView: View {
                       systemImage: model.isWantToTry(restaurant.id) ? "bookmark.fill" : "bookmark")
                     .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("saveRestaurant")
             .buttonStyle(.bordered)
             .controlSize(.large)
             .tint(Theme.accent)
@@ -108,6 +110,7 @@ struct RestaurantDetailView: View {
                 Label(isRanked ? "Re-rank" : "Been", systemImage: isRanked ? "arrow.triangle.2.circlepath" : "checkmark.circle.fill")
                     .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("rankRestaurant")
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .tint(Theme.accent)
@@ -239,7 +242,21 @@ struct RestaurantDetailView: View {
         }
     }
 
+    private func listingDetails(_ listing: RestaurantListing) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Visit this restaurant").sectionTitleStyle()
+            if !listing.address.isEmpty { Label(listing.address, systemImage: "mappin.and.ellipse").textSelection(.enabled) }
+            if let phone = listing.phone {
+                Text(phone).textSelection(.enabled)
+            }
+            if let url = listing.website { Link(destination: url) { Label("Website", systemImage: "globe") } }
+            if let url = listing.mapsURL { Link(destination: url) { Label("Open in Apple Maps", systemImage: "arrow.triangle.turn.up.right.diamond") } }
+            Text("Place information from Apple Maps. Check the restaurant’s website for current hours, menu, and prices.")
+                .font(.caption).foregroundStyle(.secondary)
+        }.frame(maxWidth: .infinity, alignment: .leading).padding().cardSurface()
+    }
+
     private var shareText: String {
-        "\(restaurant.name) — \(restaurant.cuisine.label) in \(restaurant.neighborhood), \(city?.name ?? ""). \(recommendation?.matchScore.asPercent ?? "") match on Bite."
+        "\(restaurant.name) — \(restaurant.listing?.address ?? restaurant.neighborhood)\n\(restaurant.listing?.mapsURL?.absoluteString ?? "Saved on Bite")"
     }
 }

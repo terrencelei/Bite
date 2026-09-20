@@ -24,6 +24,12 @@ struct User: Identifiable, Codable, Hashable {
 
     var isCurrentUser: Bool = false
 
+    static var local: User {
+        User(id: "local-user", name: "You", handle: "On this device", avatarEmoji: "🍽️",
+             preferences: TasteVector(), cityIDs: [], tasteTraits: [],
+             restaurantsVisited: 0, citiesCount: 0, countriesCount: 0, isCurrentUser: true)
+    }
+
     var monogram: String {
         avatarEmoji.isEmpty ? String(name.prefix(1)) : avatarEmoji
     }

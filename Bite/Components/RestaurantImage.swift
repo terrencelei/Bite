@@ -1,11 +1,7 @@
 import SwiftUI
 
-/// Procedural, always-available "food photography" for a restaurant.
-///
-/// Real photos would need a network and API keys; instead we render a deterministic,
-/// appetizing gradient seeded from the restaurant name, watermarked with its cuisine
-/// glyph. This guarantees the UI looks intentional offline and never shows a broken
-/// image — satisfying the "must remain functional when remote images fail" requirement.
+/// An illustrative placeholder, not a photograph of the restaurant.
+/// Stable colors keep a saved place recognizable without inventing imagery.
 struct RestaurantImage: View {
     let restaurant: Restaurant
     var height: CGFloat? = nil

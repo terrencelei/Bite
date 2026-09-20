@@ -88,7 +88,7 @@ struct EatTogetherView: View {
                 Text("Max budget").font(.subheadline.weight(.medium))
                 Spacer()
                 Picker("Budget", selection: $maxPrice) {
-                    ForEach(PriceLevel.allCases, id: \.self) { p in
+                    ForEach(PriceLevel.allCases.filter { $0 != .unknown }, id: \.self) { p in
                         Text(p.display(currency: model.currency(for: cityID))).tag(p)
                     }
                 }.pickerStyle(.menu).tint(Theme.accent)

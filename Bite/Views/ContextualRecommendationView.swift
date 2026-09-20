@@ -87,7 +87,7 @@ struct ContextualRecommendationView: View {
     private var budgetBlock: some View {
         pickerBlock("Budget") {
             HStack(spacing: 10) {
-                ForEach(PriceLevel.allCases, id: \.self) { p in
+                ForEach(PriceLevel.allCases.filter { $0 != .unknown }, id: \.self) { p in
                     let sel = context.maxPrice == p
                     CuisineChip(text: p.display(currency: model.currency(for: context.cityID ?? "sf")),
                                 isSelected: sel) {

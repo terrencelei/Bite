@@ -60,9 +60,9 @@ final class RankingSession {
         self.scopeName = scopeName
         self.sorted = existing
         self.hi = existing.count
-        // ~log2(n) questions, clamped to a friendly 1...5 for the demo.
+        // Resolve the entire interval, including lists larger than 31 restaurants.
         let ideal = Int(ceil(log2(Double(existing.count + 1))))
-        self.maxComparisons = min(5, max(1, ideal))
+        self.maxComparisons = max(1, ideal)
 
         if existing.isEmpty {
             finish(at: 0)

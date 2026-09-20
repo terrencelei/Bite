@@ -1,140 +1,151 @@
 import SwiftUI
 import MapKit
 
-/// Map tab: restaurants plotted with distinct annotations for Been / Want to Try /
-/// Recommended, a city switcher, filter toggles, and a bottom card for the selection.
 struct MapScreen: View {
     @Environment(AppModel.self) private var model
-    @State private var cityID = "shanghai"
+    @Environment(NearbySearchStore.self) private var nearby
     @State private var camera: MapCameraPosition = .automatic
+    @State private var visibleRegion: MKCoordinateRegion?
     @State private var selectedID: String?
-    @State private var filter: MapFilter = .all
+    @State private var selection: MapSelection<String>?
+    @State private var loadingPlace = false
+    @State private var placeError: String?
+    @State private var filter: MapFilter = .restaurants
+    @State private var showSearch = false
 
     enum MapFilter: String, CaseIterable, Identifiable {
-        case all = "All", recommended = "Recommended", wantToTry = "Want to Try", been = "Been"
+        case restaurants = "Restaurants", saved = "Saved", been = "Been"
         var id: String { rawValue }
     }
 
-    private var cityRestaurants: [Restaurant] {
-        model.restaurants.filter { $0.cityID == cityID }
-    }
-
     private var visible: [Restaurant] {
-        cityRestaurants.filter { r in
-            switch filter {
-            case .all: return true
-            case .recommended: return !model.isBeen(r.id)
-            case .wantToTry: return model.isWantToTry(r.id)
-            case .been: return model.isBeen(r.id)
-            }
+        switch filter {
+        case .restaurants: return nearby.results
+        case .saved: return model.restaurants.filter { model.isWantToTry($0.id) }
+        case .been: return model.restaurants.filter { model.isBeen($0.id) }
         }
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            map
-            controls
-            if let id = selectedID, let r = model.restaurant(id) {
-                selectionCard(r)
+        Map(position: $camera, selection: $selection) {
+            UserAnnotation()
+            ForEach(visible) { r in
+                Marker(r.name, systemImage: r.cuisine.symbol, coordinate: r.coordinate.clLocation)
+                    .tint(model.isBeen(r.id) ? .green : Theme.accent).tag(MapSelection(r.id))
             }
         }
+        .mapStyle(.standard(pointsOfInterest: .including([.restaurant, .cafe, .bakery])))
+        .mapFeatureSelectionDisabled { feature in
+            guard let category = feature.pointOfInterestCategory else { return true }
+            return ![MKPointOfInterestCategory.restaurant, .cafe, .bakery].contains(category)
+        }
+        .task(id: selection) { await loadSelection() }
+        .onMapCameraChange(frequency: .onEnd) { context in visibleRegion = context.region }
+        .mapControls { MapCompass(); MapScaleView() }
+        .safeAreaInset(edge: .top) { controls }
+        .safeAreaInset(edge: .bottom) { bottomCard }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
         .biteDestinations()
-        .onAppear { recenter() }
-        .onChange(of: cityID) { _, _ in selectedID = nil; recenter() }
+        .onAppear { camera = .region(nearby.region) }
+        .onChange(of: nearby.regionRevision) { _, _ in
+            selectedID = nil; selection = nil
+            camera = .region(nearby.region)
+        }
+         .onChange(of: filter) { _, newFilter in
+            selectedID = nil; selection = nil
+            if newFilter != .restaurants, !visible.isEmpty { camera = .automatic }
+            else if nearby.hasArea { camera = .region(nearby.region) }
+        }
+        .onChange(of: nearby.results.map(\.id)) { _, _ in selectedID = nil; selection = nil }
+        .sheet(isPresented: $showSearch) {
+            NavigationStack {
+                ScrollView { NearbySearchControls().padding() }
+                    .navigationTitle("Search an area")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showSearch = false } } }
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 
-    private var map: some View {
-        Map(position: $camera, selection: $selectedID) {
-            ForEach(visible) { r in
-                Marker(r.name, systemImage: r.cuisine.symbol, coordinate: r.coordinate.clLocation)
-                    .tint(color(for: r))
-                    .tag(r.id)
+    /// Native restaurant POIs remain tappable even when omitted from a search response.
+    @MainActor private func loadSelection() async {
+        selectedID = selection?.value
+        placeError = nil
+        loadingPlace = false
+        guard let feature = selection?.feature else { return }
+        let token = selection
+        let request = MKMapItemRequest(feature: feature)
+        loadingPlace = true
+        defer { if selection == token { loadingPlace = false } }
+        do {
+            let item = try await withTaskCancellationHandler {
+                try await request.mapItem
+            } onCancel: {
+                Task { @MainActor in request.cancel() }
+            }
+            guard !Task.isCancelled, selection == token else { return }
+            if let (restaurant, city) = AppleRestaurantSearch.map(item) {
+                model.mergeListings([restaurant], cities: [city])
+                selectedID = restaurant.id
+            }
+        } catch {
+            if !Task.isCancelled, selection == token {
+                placeError = "Couldn’t load this restaurant. Check your connection and tap it again."
             }
         }
-        .mapStyle(.standard(pointsOfInterest: .excludingAll))
-        .ignoresSafeArea(edges: .bottom)
     }
 
     private var controls: some View {
         VStack(spacing: 10) {
-            Menu {
-                ForEach(model.cities) { c in
-                    Button { cityID = c.id } label: { Label("\(c.countryFlag) \(c.name)", systemImage: "mappin") }
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "mappin.and.ellipse")
-                    Text(model.city(cityID)?.name ?? "City").fontWeight(.semibold)
-                    Image(systemName: "chevron.down").font(.caption2)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(.regularMaterial, in: Capsule())
+            HStack {
+                Button { showSearch = true } label: { Label("Search", systemImage: "magnifyingglass") }
+                Spacer()
+                Button { nearby.useMyLocation(model: model) } label: {
+                    Label(nearby.location.isLocating ? "Locating…" : "Near me", systemImage: "location.fill")
+                }.disabled(nearby.location.isLocating)
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(MapFilter.allCases) { f in
-                        CuisineChip(text: f.rawValue, isSelected: filter == f) { filter = f }
-                    }
-                }
-                .padding(.horizontal)
+            Picker("Places", selection: $filter) {
+                ForEach(MapFilter.allCases) { Text($0.rawValue).tag($0) }
+            }.pickerStyle(.segmented)
+            if filter == .restaurants {
+                Button {
+                    selectedID = nil; selection = nil
+                    nearby.search(in: visibleRegion ?? nearby.region, model: model)
+                } label: { Label("Search this area", systemImage: "arrow.clockwise") }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    .disabled(nearby.isLoading)
             }
         }
-        .padding(.top, 6)
+        .padding(12).background(.regularMaterial)
     }
 
-    private func selectionCard(_ r: Restaurant) -> some View {
-        VStack {
-            Spacer()
-            NavigationLink(value: r) {
-                HStack(spacing: 12) {
-                    RestaurantThumb(restaurant: r, size: 56)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(r.name).font(.subheadline.weight(.semibold))
-                        Text("\(r.cuisine.label) · \(r.neighborhood)").font(.caption).foregroundStyle(.secondary)
-                        HStack(spacing: 6) {
-                            statusChip(for: r)
-                            if model.isBeen(r.id) {
-                                let scope = RankingScope(kind: .city(r.cityID), title: "", subtitle: "", symbol: "")
-                                Text("#\(model.rank(of: r.id, in: scope) ?? 0) in \(model.city(r.cityID)?.name ?? "")")
-                                    .font(.caption2).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if let rec = model.recommendation(for: r.id) { MatchBadge(score: rec.matchScore, size: .small) }
-                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                }
-                .padding(12)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .padding(.horizontal)
+    @ViewBuilder private var bottomCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if loadingPlace {
+                ProgressView("Loading restaurant…")
+            } else if let error = placeError {
+                Text(error).font(.footnote)
+            } else if let id = selectedID, let r = model.restaurant(id) {
+                NavigationLink(value: r) { RestaurantRow(restaurant: r) }.buttonStyle(.plain)
+            } else if nearby.isLoading {
+                ProgressView("Finding restaurants…")
+            } else if let error = nearby.errorMessage {
+                Text(error).font(.footnote)
+                Button("Search another area") { showSearch = true }
+            } else if let message = nearby.location.message {
+                Text(message).font(.footnote)
+                Button("Location options") { showSearch = true }
+            } else {
+                Text(filter == .restaurants ? "\(visible.count) restaurants found" : "\(visible.count) places")
+                    .font(.subheadline.bold())
+                Text(filter == .restaurants
+                     ? "Search this area or a restaurant name to find more. Results may not include every restaurant."
+                     : "Tap a pin to view a restaurant.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, 8)
         }
-    }
-
-    @ViewBuilder private func statusChip(for r: Restaurant) -> some View {
-        if model.isBeen(r.id) {
-            Label("Been", systemImage: "checkmark.circle.fill").font(.caption2).foregroundStyle(.green)
-        } else if model.isWantToTry(r.id) {
-            Label("Want to Try", systemImage: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent)
-        } else {
-            Label("Recommended", systemImage: "sparkles").font(.caption2).foregroundStyle(Theme.indigo)
-        }
-    }
-
-    private func color(for r: Restaurant) -> Color {
-        if model.isBeen(r.id) { return .green }
-        if model.isWantToTry(r.id) { return Theme.accent }
-        return Theme.indigo
-    }
-
-    private func recenter() {
-        guard let c = model.city(cityID) else { return }
-        camera = .region(MKCoordinateRegion(center: c.center.clLocation,
-                                            span: MKCoordinateSpan(latitudeDelta: 0.09, longitudeDelta: 0.09)))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding().background(.regularMaterial)
     }
 }

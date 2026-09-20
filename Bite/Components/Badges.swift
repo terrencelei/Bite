@@ -70,11 +70,17 @@ struct PriceText: View {
     let price: PriceLevel
     let currency: String
     var body: some View {
-        HStack(spacing: 0) {
-            Text(String(repeating: currency, count: price.rawValue)).foregroundStyle(.primary)
-            Text(String(repeating: currency, count: 4 - price.rawValue)).foregroundStyle(.quaternary)
+        Group {
+            if price == .unknown {
+                Text("Price unavailable").font(.caption).foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 0) {
+                    Text(String(repeating: currency, count: price.rawValue)).foregroundStyle(.primary)
+                    Text(String(repeating: currency, count: 4 - price.rawValue)).foregroundStyle(.quaternary)
+                }
+                .font(.subheadline.weight(.semibold))
+            }
         }
-        .font(.subheadline.weight(.semibold))
     }
 }
 

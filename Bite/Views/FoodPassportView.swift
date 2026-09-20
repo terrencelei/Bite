@@ -84,7 +84,7 @@ struct CityDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                completion
+                if model.demoMode { completion }
                 cityRanking
             }
             .padding()
